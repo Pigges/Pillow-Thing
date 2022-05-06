@@ -3,7 +3,9 @@ import random
 from PIL import Image
 import math
 
-img = Image.open('img.jpg')
+# TODO: fix "Invalid awnser!" bug for the filters that asks for value
+
+img = False
 
 # Credits
 credits = """\nInformation:
@@ -13,16 +15,20 @@ This is a simple image manipulation tool made in school
 """
 
 # Ask for the option text
-menu_ask = """\nMenu
+def menu_ask(loaded):
+    return f"""\nMenu
+Loaded: {loaded}
 ----------
 [1] Filter
-[2] Information
-[3] Exit
+[2] Load file (filename)
+[3] Save file (filename)
+[4] Information
+[5] Exit
 ----------
 Choose option: """
 
 # Ask for the filter text
-filter_ask = """\nFilters
+def filter_ask(loaded): return """\nFilters
 ----------
 [1]: Gray scale
 [2]: Color shift
@@ -35,12 +41,7 @@ Choose filter: """
 
 # Ask for a value
 def value_ask(limit):
-    return f"\nValue [1-{limit}]: "
-
-# Save the image
-def saveFile():
-    print('Saving file!')
-    img.save('img_new.png')
+    return f"\nValue [1-{limit}]: "    
 
 # Make the image grayscale
 def grayScale():
@@ -50,7 +51,6 @@ def grayScale():
             mean_value = math.floor((pixel[0] + pixel[1] + pixel[2])/3) # Get the mean value of the color values
             pixel = (mean_value, mean_value, mean_value) # Reassing the pixel variable with the new gray scaled values
             img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
 
 # Color shift the image
 def colorShift():
@@ -59,7 +59,6 @@ def colorShift():
             pixel = img.getpixel((x, y)) # Fetch the pixel
             pixel = (pixel[1], pixel[2], pixel[0]) # Shift the color values
             img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
 
 # Invert the image
 def invertColor():
@@ -68,7 +67,6 @@ def invertColor():
             pixel = img.getpixel((x, y)) # Fetch the pixel
             pixel = (255 - pixel[0], 255 - pixel[1], 255 - pixel[2]) # Invert color by doing: 255 - value
             img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
 
 # Brighten the image
 def brighter():
@@ -80,7 +78,6 @@ def brighter():
             pixel = img.getpixel((x, y)) # Fetch the pixel
             pixel = (math.floor(pixel[0]*value), math.floor(pixel[1]*value), math.floor(pixel[2]*value)) # Multiplying all color values with the value factor
             img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
 
 # Darken the image
 def darker():
@@ -92,7 +89,6 @@ def darker():
             pixel = img.getpixel((x, y)) # Fetch the pixel
             pixel = (math.floor(pixel[0]/value), math.floor(pixel[1]/value), math.floor(pixel[2]/value)) # Dividing all color values with the value denominator
             img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
 
 # Create noise in the image
 def noise():
@@ -108,24 +104,59 @@ def noise():
                 pixel = img.getpixel((x, y)) # Fetch the pixel
                 pixel = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 img.putpixel((x, y), pixel) # Put the pixel value in the current position
-    saveFile() # Save the image
+
+# Load a file
+def loadFile():
+    while True:
+        # Try to load file; except if it does not exist
+        try:
+            img = Image.open(input("Enter file name: ./"))
+            break
+        except:
+            print("File not found..")
+    # Return the loaded file
+    return ["img", img]
+
+def saveFile():
+     # Make sure that a file is loaded
+    if (not img): 
+        input("No file loaded.\nPress Enter to continue... ")
+        return
+    while True:
+        try:
+            filename = input("Save file as: ./")
+            img.save(filename)
+            input(f"File saved as: {filename}\nPress Enter to continue: ")
+            break
+        except:
+            print("Error saving file..")
+    return
 
 
 # Function to show information about this program
 def information():
     print(credits)
+    input('Press ENTER to continue... ')
 
 # Exit program
 def exit():
     print('\nExiting!')
+    return ['exit']
 
 # Handle filters menu
 def filters():
+    # Make sure that a file is loaded
+    if (not img): 
+        input("No file loaded.\nPress Enter to continue... ")
+        return
     filter_list[menu(filter_list, filter_ask)]()
+    input("Filter applied!\nPress Enter to continue... ")
 
 # A list for the menu where each element points to the corresponding function
 menu_list = [
     filters,
+    loadFile,
+    saveFile,
     information,
     exit
 ]
@@ -146,7 +177,8 @@ def menu(list, ask): # Get the appropriate list and question
     while True:
         # Try converting awnser to integer
         try:
-            response = int(input(ask)) # Ask the user what filter they want to use
+            loaded = img.filename if img else "None"
+            response = int(input(ask(loaded))) # Ask the user what filter they want to use
             if (response >= 0 and response <= len(list)): # Make sure the awnser is within the correct range. If so, break 
                 break
             else: print("\nOut of range!") # Tell the user that the number was out of range
@@ -156,4 +188,10 @@ def menu(list, ask): # Get the appropriate list and question
     return response-1 # Return the awsner minus one because lists start at 0
 
 
-menu_list[menu(menu_list, menu_ask)]()
+while True:
+    response = menu_list[menu(menu_list, menu_ask)]()
+    if response:
+        if (response[0] == 'img'):
+            img = response[1]
+        elif (response[0] == 'exit'):
+            break
