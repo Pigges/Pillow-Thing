@@ -5,7 +5,6 @@ from tqdm import tqdm
 from PIL import Image
 import math
 
-# TODO: fix "Invalid answer!" bug for the filters that asks for value
 
 img_org = False
 img = False
